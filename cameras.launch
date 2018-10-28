@@ -1,0 +1,48 @@
+<launch>
+
+  <!-- Command Line Arguments -->
+  <arg name="sync_sink" default="true" />                    <!-- Synchronize the app sink -->
+  <arg name="width" default="1280" />                        <!-- Image Width -->
+  <arg name="height" default="720" />                        <!-- Image Height -->
+  <arg name="fps" default="60" />                            <!-- Desired framerate -->
+
+  <!-- Make arguments available to parameter server -->
+  <param name="image_width" type="int" value="$(arg width)" />
+  <param name="image_height" type="int" value="$(arg height)" />
+  <param name="target_fps" type="int" value="$(arg fps)" />
+
+  <group ns="stereo">
+    <node name="right" pkg="gscam" type="gscam" >
+      <param name="camera_name" value="right" />
+      <param name="gscam_config" value="nvcamerasrc sensor-id=0 auto-exposure=2 aeLock=0 ! video/x-raw(memory:NVMM), width=(int)$(arg width), height=(int)$(arg height), format=(string)I420,framerate=(fraction)$(arg fps)/1 ! nvvidconv flip-method=2 ! video/x-raw, format=(string)BGRx ! videoconvert ! video/x-raw, format=(string)BGR" />
+      <param name="camera_id" value="0" />
+      <param name="frame_id" value="right_link" />
+      <param name="sync_sink" value="true" />
+      <param name="right/image_width" type="int" value="$(arg width)" />
+      <param name="right/image_height" type="int" value="$(arg height)" />
+      <param name="right/target_fps" type="int" value="$(arg fps)" />
+      <param name="camera_info_url" value="package://cameras/calibration-right.yaml" />
+      <remap from="camera/image_raw" to="right/image_raw" />
+      <remap from="camera/camera_info" to="right/camera_info" />
+      <remap from="set_camera_info" to="camera_info" />
+    </node>
+
+    <node name="left" pkg="gscam" type="gscam" >
+      <param name="camera_name" value="left" />
+      <param name="gscam_config" value="nvcamerasrc sensor-id=1 auto-exposure=2 aeLock=0 ! video/x-raw(memory:NVMM), width=(int)$(arg width), height=(int)$(arg height), format=(string)I420, framerate=(fraction)$(arg fps)/1 ! nvvidconv flip-method=2 ! video/x-raw, format=(string)BGRx ! videoconvert ! video/x-raw, format=(string)BGR" />
+      <param name="frame_id" value="left_link" />
+      <param name="sync_sink" value="true" />
+      <param name="left/image_width" type="int" value="$(arg width)" />
+      <param name="left/image_height" type="int" value="$(arg height)" />
+      <param name="left/target_fps" type="int" value="$(arg fps)" />
+      <param name="camera_info_url" value="package://cameras/calibration-left.yaml" />
+      <remap from="camera/image_raw" to="left/image_raw" />
+      <remap from="camera/camera_info" to="left/camera_info" />
+      <remap from="/set_camera_info" to="/left/set_camera_info" />
+    </node>
+
+    <node name="both" pkg="stereo_image_proc" type="stereo_image_proc" />
+
+  </group>
+
+</launch>
